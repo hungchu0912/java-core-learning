@@ -14,24 +14,33 @@ Reference:
 public class WaitAndNotifyExample {
     public static void main(String[] args) throws InterruptedException {
         var waitAndNotifyExample = new WaitAndNotifyExample();
-        new Thread(() -> {
+        thread1(waitAndNotifyExample).start();
+        thread2(waitAndNotifyExample).start();
+    }
+
+    public static Thread thread1(WaitAndNotifyExample waitAndNotifyExample) {
+        return new Thread(() -> {
             waitAndNotifyExample.printDummy("t1");
             synchronized (waitAndNotifyExample) {
-                waitAndNotifyExample.notifyAll();
+                waitAndNotifyExample.notifyAll();//notify t2
             }
-        }).start();
-        synchronized (waitAndNotifyExample) {
-            waitAndNotifyExample.wait();
-        }
-        new Thread(() -> waitAndNotifyExample.printDummy("t2")).start();
+        });
+    }
+
+    public static Thread thread2(WaitAndNotifyExample waitAndNotifyExample) {
+        return new Thread(() -> {
+            synchronized (waitAndNotifyExample) {
+                try {
+                    waitAndNotifyExample.wait(); //causing t2 to wait until t1 notify
+                    waitAndNotifyExample.printDummy("t2");
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     public void printDummy(String name) {
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException ex) {
-            throw new RuntimeException();
-        }
         System.out.println("dummy " + name);
     }
 }
